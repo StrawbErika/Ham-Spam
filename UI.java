@@ -14,13 +14,13 @@ public class UI {
         classifyDictionary = new HashMap<String, ArrayList>();
         String s="";
         BagOfWords spam = new BagOfWords();
-        for(int i = 1; i<300; i++){
-            s = String.format("%03d", i);
-            s = String.format("all_data/spam/" + s);
-            spam.loadFile(s);
-        }
+        // for(int i = 1; i<300; i++){
+        //     s = String.format("%03d", i);
+        //     s = String.format("all_data/spam/" + s);
+        // }
+        spam.loadFile("all_data/spam/002");
         System.out.println("Spam lines " + spam.numberOfLines);
-        spam.saveFile(spam.dictionarySize, spam.numberOfWords);
+        spam.saveFile(spam.dictionarySize, spam.numberOfWords, "outputSpam.txt");
 
         BagOfWords ham = new BagOfWords();
         for(int i = 1; i<300; i++){
@@ -29,7 +29,7 @@ public class UI {
             ham.loadFile(s);
         }
         System.out.println("ham lines " + ham.numberOfLines);
-        ham.saveFile(ham.dictionarySize, ham.numberOfWords);
+        ham.saveFile(ham.dictionarySize, ham.numberOfWords, "outputHam.txt");
 
         s = String.format("all_data/classify/001");
         //loads all files in classify (atm 1 muna) and saves it in the dictionary
@@ -45,8 +45,9 @@ public class UI {
         for (Map.Entry<String, ArrayList> entry : classifyDictionary.entrySet()) {
           double sVal;
           double hVal;
-          double pWordSpam;
-          double pWordHam;
+          double pWordSpam = 0;
+          double pWordHam = 0;
+
           //loops through the array of words of each file (which is saved as the value of each key <file>)
           for(int i = 0; i < entry.getValue().size(); i++){
             //gets MessageSpam & messageHam by getting the WordSpam (u get it by getting the #of occurences it is in Spam/Ham)
@@ -54,28 +55,44 @@ public class UI {
                 sVal = spam.dictionary.get(entry.getValue().get(i));
             }else{
               sVal = 0;
+              // System.out.println("SPAM NOT: " + entry.getValue().get(i) + "================================================");
             }
             pWordSpam = p.pWordSpam(spam.numberOfWords, sVal);
+            if(pWordSpam == 0){
+              System.out.println(sVal);
+              // System.out.println(" pWordSPAM " + pWordSpam);
+            }
+
             pMessageSpam = pWordSpam * pMessageSpam;
+            System.out.println("pMESSAGESPAM in word " + i + " is " + pMessageSpam);
 
             if(ham.dictionary.containsKey(entry.getValue().get(i))){
                 hVal = ham.dictionary.get(entry.getValue().get(i));
             }else{
               hVal = 0;
+              // System.out.println("HAM NOT: " + entry.getValue().get(i) + "================================================");
             }
             pWordHam = p.pWordHam(spam.numberOfWords, hVal);
+            if(pWordSpam == 0){
+              // System.out.println(hVal);
+              // System.out.println(" pWordHAM " + pWordHam);
+              // System.out.println("");
+            }
             pMessageHam = pWordHam * pMessageHam;
+            System.out.println("pMESSAGEHAM is " + pMessageHam);
+            System.out.println("");
 
           }
 
-          System.out.println(pMessageHam);
+          // System.out.println("pMessageHam: " +pMessageHam);
           double pMessage = p.pMessage(pMessageSpam, pSpam, pMessageHam, pHam);
-          System.out.println(pMessage);
-          double pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage);
+          // System.out.println("pMessage: " +pMessage);
+          double pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage, pSpam);
           double pHamMessage = p.pHamMessage(pMessageHam, pMessage);
-          System.out.println(pSpamMessage);
-          System.out.println(pHamMessage);
+          System.out.println("pSpamMessage: " +pSpamMessage);
+          System.out.println("pHamMessage: " +pHamMessage);
 
+          saveFile("outputClassify", classifyDictionary);
           classifyFile(entry.getKey(), "Ham", pSpamMessage);
         }
 
@@ -99,7 +116,9 @@ public class UI {
                 for (String str : values) {
                     str = str.toLowerCase();
                     str = str.replaceAll("[^a-zA-Z0-9]", ""); //checks if none alphanumeric
-                    list.add(str);
+                    if(!(str.equals("")) && !(list.contains(str))){ //catches the case of ""
+                      list.add(str);
+                    }
                 }
             }
             dictionary.put(filename, list); //stores str in dictionary
@@ -115,6 +134,26 @@ public class UI {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
             writer.write(number+ " "+ name+ " "+ probabilitySpam +"\n");
+            writer.close();
+        }
+        catch(FileNotFoundException ex) {
+            System.out.println("Unable to open file '" + filename + "'");
+        }
+        catch(IOException ex) {
+            System.out.println("Error writing file '" + filename + "'");
+        }
+    }
+
+    public void saveFile(String filename, HashMap<String, ArrayList> cDictionary) { //writes file
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
+            // writer.write("# of files: " + dictionary.size +"\n");
+            for (Map.Entry<String, ArrayList> entry : cDictionary.entrySet()) {
+              for(int i = 0; i < entry.getValue().size(); i++){
+                    writer.write(i +" "+ entry.getValue().get(i) + "\n");
+              }
+            }
+
             writer.close();
         }
         catch(FileNotFoundException ex) {

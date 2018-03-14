@@ -22,6 +22,7 @@ public class Probability {
 
     public double pWordSpam(double spamWords, double occurenceOfWord){
         x =  occurenceOfWord / spamWords;
+        System.out.println("# OF SPAM WORDS: " + spamWords + " OCCURENCE OF WORD: " + occurenceOfWord);
         return x;
     }
 
@@ -31,8 +32,8 @@ public class Probability {
     }
 
 
-    public double pSpamMessage(double pProductOfWordSpam, double pMessage){
-        x = pProductOfWordSpam / pMessage;
+    public double pSpamMessage(double pProductOfWordSpam, double pMessage, double pSpam){
+        x = pProductOfWordSpam*pSpam / pMessage;
         return x;
     }
 

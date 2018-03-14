@@ -29,6 +29,7 @@ public class BagOfWords {
             {
                 String[] values = line.split(" "); //stores all the words from the line in values
                 for (String str : values) {
+                        str = str.toLowerCase();
                         str = str.replaceAll("[^a-zA-Z0-9]", ""); //checks if none alphanumeric
                         if(dictionary.containsKey(str)){
                             int val = dictionary.get(str);
@@ -50,9 +51,22 @@ public class BagOfWords {
         }
     }
 
+    public void saveFile(String filename, String string) { //writes file
+          try {
+              BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
+              writer.write(string + "\n");
 
-    public void saveFile(int size, int num) { //writes file
-        String filename = "output.txt";
+              writer.close();
+          }
+          catch(FileNotFoundException ex) {
+              System.out.println("Unable to open file '" + filename + "'");
+          }
+          catch(IOException ex) {
+              System.out.println("Error writing file '" + filename + "'");
+          }
+
+    }
+    public void saveFile(int size, int num, String filename) { //writes file
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
             writer.write("Dictionary size: " + size + "\n" + "Total number of words: "  +num + "\n");
