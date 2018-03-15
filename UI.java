@@ -11,41 +11,43 @@ public class UI {
     public HashMap<String, ArrayList> classifyDictionary;
     public int numberOfSpamMsgs;
     public int numberOfHamMsgs;
+    public int numberOfClassifyMsgs;
 
     public UI() {
         classifyDictionary = new HashMap<String, ArrayList>();
         String s="";
+        String a="";
         BagOfWords spam = new BagOfWords();
         numberOfSpamMsgs = new File("all_data/spam/").listFiles().length;
         for(int i = 1; i<numberOfSpamMsgs; i++){
-            s = String.format("%03d", i);
-            s = String.format("all_data/spam/" + s);
+            a = String.format("%03d", i);
+            s = String.format("all_data/spam/" + a);
             spam.loadFile(s);
         }
-        System.out.println("spam words " + spam.dictionarySize);
         spam.saveFile(spam.dictionarySize, spam.numberOfWords, "outputSpam.txt");
 
         BagOfWords ham = new BagOfWords();
         numberOfHamMsgs = new File("all_data/ham/").listFiles().length;
         for(int i = 1; i<300; i++){
-            s = String.format("%03d", i);
-            s = String.format("all_data/ham/" + s);
+            a = String.format("%03d", i);
+            s = String.format("all_data/ham/" + a);
             ham.loadFile(s);
         }
-        System.out.println("ham words " + ham.dictionarySize);
         ham.saveFile(ham.dictionarySize, ham.numberOfWords, "outputHam.txt");
 
-        s = String.format("all_data/classify/001");
+        numberOfClassifyMsgs = new File("all_data/classify/").listFiles().length;
+        for(int i = 1; i<=numberOfClassifyMsgs; i++){
+            a = String.format("%03d", i);
+            s = String.format("all_data/classify/" + a);
+            classifyLoadFile(a, classifyDictionary);
+        }
         //loads all files in classify (atm 1 muna) and saves it in the dictionary
-        classifyLoadFile(s, classifyDictionary);
 
         Probability p = new Probability();
         double pMessageSpam = 1;
         double pMessageHam = 1;
         double pSpam = p.pSpam(numberOfSpamMsgs, numberOfHamMsgs);
         double pHam = p.pHam(pSpam);
-        System.out.println("pSPAM: " + pSpam);
-        System.out.println("pHAM: " + pHam);
 
         //gets pMessageSpam & pMessageHam by looping through the dictionary and saves each probability in a file
         for (Map.Entry<String, ArrayList> entry : classifyDictionary.entrySet()) {
@@ -54,54 +56,41 @@ public class UI {
           double pWordSpam = 0;
           double pWordHam = 0;
 
-          //loops through the array of words of each file (which is saved as the value of each key <file>)
           for(int i = 0; i < entry.getValue().size(); i++){
-            //gets MessageSpam & messageHam by getting the WordSpam (u get it by getting the #of occurences it is in Spam/Ham)
             if(spam.dictionary.containsKey(entry.getValue().get(i))){
                 sVal = spam.dictionary.get(entry.getValue().get(i));
             }else{
               sVal = 0;
-              System.out.println("SPAM NOT: " + entry.getValue().get(i) + "================================================");
             }
             pWordSpam = p.pWordSpam(spam.numberOfWords, sVal);
-            if(pWordSpam == 0){
-            }
 
-            System.out.println("pWordSpam : "+ pWordSpam+ " * pMessageSpam" +pMessageSpam+ " at word " + i + " is ");
             pMessageSpam = pWordSpam * pMessageSpam;
-            System.out.println(pMessageSpam);
 
             if(ham.dictionary.containsKey(entry.getValue().get(i))){
                 hVal = ham.dictionary.get(entry.getValue().get(i));
             }else{
               hVal = 0;
-              // System.out.println("HAM NOT: " + entry.getValue().get(i) + "================================================");
             }
             pWordHam = p.pWordHam(spam.numberOfWords, hVal);
-            if(pWordSpam == 0){
-            }
-
-            System.out.println("pWordHam : "+ pWordHam+ " * pMessageHam" +pMessageHam+ " at word " + i + " is ");
             pMessageHam = pWordHam * pMessageHam;
-            System.out.println(pMessageHam);
-            // System.out.println("pMESSAGEHAM is " + pMessageHam);
-            System.out.println("");
-
           }
 
-          // System.out.println("pMessageHam: " +pMessageHam);
+          double pSpamMessage;
           double pMessage = p.pMessage(pMessageSpam, pSpam, pMessageHam, pHam);
-          System.out.println("pMessage: " +pMessage);
-          double pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage, pSpam);
-          double pHamMessage = p.pHamMessage(pMessageHam, pMessage);
-          System.out.println("pSpamMessage: " +pSpamMessage);
-          System.out.println("pHamMessage: " +pHamMessage);
+          if(pMessage > 0){
+            pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage, pSpam);
+          }
+          else{
+            pSpamMessage = 0;
+          }
 
-          saveFile("outputClassify", classifyDictionary);
-          classifyFile(entry.getKey(), "Ham", pSpamMessage);
+          if (pSpamMessage > 0.5){
+            classifyFile(entry.getKey(), "Spam", pSpamMessage);
+          }
+          else{
+            classifyFile(entry.getKey(), "Ham", pSpamMessage);
+          }
         }
-
-
 
         this.initializeUI();
     }
@@ -109,6 +98,8 @@ public class UI {
 
     public void classifyLoadFile(String filename, HashMap dictionary) {
         try{
+            String a = filename;
+            filename = String.format("all_data/classify/" + a);
             FileInputStream fstream = new FileInputStream(filename);
             DataInputStream in = new DataInputStream(fstream);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
@@ -126,7 +117,7 @@ public class UI {
                     }
                 }
             }
-            dictionary.put(filename, list); //stores str in dictionary
+            dictionary.put(a, list); //stores str in dictionary
             in.close();
         } catch (Exception e) {//Catch exception if any
             System.err.println("Error: " + e.getMessage());
@@ -170,24 +161,217 @@ public class UI {
     }
 
     public void initializeUI() {
-        frame = new JFrame("Sokoban");
+      JLabel stats02= new JLabel();
+      JFrame frame = new JFrame("Ham & Spam");//creates a frame/window; javax.swing.JFrame
+      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      frame.setPreferredSize(new Dimension(1000, 700));//sets initial size resolution of the frame...; java.awt.Dimensio
 
-        Container pane = frame.getContentPane();
-        JPanel panel = new JPanel();
-        frame.setSize(500, 500);        // "super" Frame sets its initial window size
+      Container con = frame.getContentPane();
+      JPanel contentPanel= new JPanel();
 
-        JButton button = new JButton();
-        button.setFocusable(false);
-        button.setPreferredSize(new Dimension(200, 50)); //tile size
-        button.setLabel("Select Spam Folder");
-        button.setLocation(12, 371);
-        panel.add(button);
+      JPanel tabPanel= new JPanel();
+      tabPanel.setLayout(new FlowLayout());
+      tabPanel.setPreferredSize(new Dimension(250,500));
+      tabPanel.setBackground(Color.WHITE);
 
-        pane.add(panel);
-        frame.setResizable(false);
-        frame.setFocusable(true);
-        frame.pack();
-        frame.setVisible(true);
+
+      JButton information= new JButton("Select Spam Folder here");
+      information.addActionListener(new ActionListener(){
+        public void actionPerformed(ActionEvent e){
+          JFileChooser fileChooser = new JFileChooser();
+          int result = fileChooser.showOpenDialog(frame);
+          if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+          }
+          frame.requestFocus();
+        }
+      });
+
+      information.setPreferredSize(new Dimension(200,50));
+
+      JPanel wordFrequencySpamPanel= new JPanel();
+      wordFrequencySpamPanel.setLayout(new GridLayout(1,2));
+      wordFrequencySpamPanel.setPreferredSize(new Dimension(300,700));
+
+      JPanel wordSpamPanel= new JPanel();
+      wordSpamPanel.setBackground(Color.WHITE);
+      JPanel textWSpamPanel= new JPanel();
+      textWSpamPanel.setPreferredSize(new Dimension(200,30));
+      textWSpamPanel.setBackground(Color.LIGHT_GRAY);
+      JLabel wordSpam = new JLabel("Word");
+      textWSpamPanel.add(wordSpam);
+      wordSpamPanel.add(textWSpamPanel);
+
+      JPanel frequencySpamPanel= new JPanel();
+      frequencySpamPanel.setBackground(Color.PINK);
+      JPanel textFSpamPanel= new JPanel();
+      textFSpamPanel.setPreferredSize(new Dimension(200,30));
+      textFSpamPanel.setBackground(Color.LIGHT_GRAY);
+      JLabel frequencySpam = new JLabel("Frequency");
+      textFSpamPanel.add(frequencySpam);
+      frequencySpamPanel.add(textFSpamPanel);
+
+      wordFrequencySpamPanel.add(wordSpamPanel);
+      wordFrequencySpamPanel.add(frequencySpamPanel);
+
+
+      tabPanel.add(information);
+      tabPanel.add(wordFrequencySpamPanel);
+
+
+      contentPanel.setLayout(new CardLayout());
+      CardLayout cardLayout= (CardLayout) contentPanel.getLayout();
+
+      //panel 1
+      JPanel hamPanel= new JPanel();
+      hamPanel.setLayout(new FlowLayout());
+      hamPanel.setPreferredSize(new Dimension(250,500));
+      hamPanel.setBackground(Color.WHITE);
+
+      JButton panel1= new JButton("Select Ham Folder here");
+
+      panel1.addActionListener(new ActionListener(){
+        public void actionPerformed(ActionEvent e){
+          JFileChooser fileChooser = new JFileChooser();
+          int result = fileChooser.showOpenDialog(frame);
+          if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+          }
+          frame.requestFocus();
+        }
+      });
+
+      panel1.setPreferredSize(new Dimension(200,50));
+
+      JPanel wordFrequencyPanel= new JPanel();
+      wordFrequencyPanel.setLayout(new GridLayout(1,2));
+      wordFrequencyPanel.setPreferredSize(new Dimension(300,700));
+
+      JPanel wordPanel= new JPanel();
+      wordPanel.setBackground(Color.WHITE);
+      JPanel textWPanel= new JPanel();
+      textWPanel.setPreferredSize(new Dimension(200,30));
+      textWPanel.setBackground(Color.LIGHT_GRAY);
+      JLabel word = new JLabel("Word");
+      textWPanel.add(word);
+      wordPanel.add(textWPanel);
+
+      JPanel frequencyPanel= new JPanel();
+      frequencyPanel.setBackground(Color.PINK);
+      JPanel textFPanel= new JPanel();
+      textFPanel.setPreferredSize(new Dimension(200,30));
+      textFPanel.setBackground(Color.LIGHT_GRAY);
+      JLabel frequency = new JLabel("Frequency");
+      textFPanel.add(frequency);
+      frequencyPanel.add(textFPanel);
+
+      wordFrequencyPanel.add(wordPanel);
+      wordFrequencyPanel.add(frequencyPanel);
+
+      hamPanel.add(panel1);
+      hamPanel.add(wordFrequencyPanel);
+
+
+  //panel 2
+      JPanel panel02= new JPanel();
+      JPanel dictionaryTotal = new JPanel();
+      dictionaryTotal.setPreferredSize(new Dimension(350,60));
+      dictionaryTotal.setBackground(Color.PINK);
+      dictionaryTotal.setLayout(new GridLayout(1, 2));
+      JLabel dictionarySize = new JLabel("   Dictionary Size:");
+      JLabel totalWords = new JLabel("Total Words: ");
+      dictionaryTotal.add(dictionarySize);
+      dictionaryTotal.add(totalWords);
+
+      JPanel buttonsPanel = new JPanel();
+      buttonsPanel.setPreferredSize(new Dimension(350,100));
+      // buttonsPanel.setBackground(Color.GRAY);
+
+      JButton classify= new JButton("Select Classify Folder");
+      JButton filter= new JButton("Filter");
+      JLabel output = new JLabel ("Output: ");
+      JPanel outputPanel= new JPanel();
+      outputPanel.setPreferredSize(new Dimension(350,500));
+      outputPanel.setLayout(new GridLayout(1,3));
+
+      JPanel filePanel= new JPanel();
+      JPanel fileName = new JPanel();
+      fileName.setPreferredSize(new Dimension(300, 30));
+      fileName.setBackground(Color.LIGHT_GRAY);
+      JLabel file = new JLabel("Filename");
+      JPanel fileContent = new JPanel();
+      fileContent.setPreferredSize(new Dimension(200,500));
+      fileContent.setBackground(Color.WHITE);
+      fileName.add(file);
+      filePanel.add(fileName);
+      filePanel.add(fileContent);
+
+      JPanel classPanel= new JPanel();
+      JPanel className = new JPanel();
+      className.setPreferredSize(new Dimension(300, 30));
+      className.setBackground(Color.LIGHT_GRAY);
+      JLabel classN = new JLabel("Class");
+      JPanel classContent = new JPanel();
+      classContent.setPreferredSize(new Dimension(200,500));
+      classContent.setBackground(Color.PINK);
+      className.add(classN);
+      classPanel.add(className);
+      classPanel.add(classContent);
+
+      JPanel pSpamPanel= new JPanel();
+      JPanel spamName = new JPanel();
+      spamName.setPreferredSize(new Dimension(300, 30));
+      spamName.setBackground(Color.LIGHT_GRAY);
+      JLabel spamN = new JLabel("pSpam");
+      JPanel spamContent = new JPanel();
+      spamContent.setPreferredSize(new Dimension(200,500));
+      spamContent.setBackground(Color.WHITE);
+      spamName.add(spamN);
+      pSpamPanel.add(spamName);
+      pSpamPanel.add(spamContent);
+
+      classify.setPreferredSize(new Dimension(200,50));
+      filter.setPreferredSize(new Dimension(100,30));
+
+      classify.addActionListener(new ActionListener(){
+        public void actionPerformed(ActionEvent e){
+          JFileChooser fileChooser = new JFileChooser();
+          int result = fileChooser.showOpenDialog(frame);
+          if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+          }
+          frame.requestFocus();
+        }
+      });
+
+      filter.addActionListener(new ActionListener(){
+        public void actionPerformed(ActionEvent e){
+        }
+      });
+
+      buttonsPanel.setLayout(new GridLayout(2,1));
+      buttonsPanel.add(classify);
+      buttonsPanel.add(filter);
+      panel02.add(dictionaryTotal);
+      panel02.add(buttonsPanel);
+      panel02.add(output);
+      outputPanel.add(filePanel);
+      outputPanel.add(classPanel);
+      outputPanel.add(pSpamPanel);
+      panel02.add(outputPanel);
+  //--
+
+  //--
+
+      con.setLayout(new GridLayout(1,3));
+      con.add(tabPanel);
+      con.add(hamPanel);
+      con.add(panel02);
+
+      frame.pack();
+  		frame.setVisible(true);
     }
-
-}
+  }
