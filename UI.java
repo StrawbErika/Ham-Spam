@@ -12,44 +12,47 @@ public class UI {
     public int numberOfSpamMsgs;
     public int numberOfHamMsgs;
     public int numberOfClassifyMsgs;
-
+    public BagOfWords spam;
+    public BagOfWords ham;
     public UI() {
-        classifyDictionary = new HashMap<String, ArrayList>();
+        this.classifyDictionary = new HashMap<String, ArrayList>();
+        this.spam = new BagOfWords();
+        this.ham = new BagOfWords();
         String s="";
         String a="";
-        BagOfWords spam = new BagOfWords();
-        numberOfSpamMsgs = new File("all_data/spam/").listFiles().length;
-        for(int i = 1; i<numberOfSpamMsgs; i++){
-            a = String.format("%03d", i);
-            s = String.format("all_data/spam/" + a);
-            spam.loadFile(s);
-        }
-        spam.saveFile(spam.dictionarySize, spam.numberOfWords, "outputSpam.txt");
+        // numberOfSpamMsgs = new File("all_data/spam/").listFiles().length;
+        // for(int i = 1; i<numberOfSpamMsgs; i++){
+        //     a = String.format("%03d", i);
+        //     s = String.format("all_data/spam/" + a);
+        //     spam.loadFile(s);
+        // }
+        // spam.saveFile(spam.dictionarySize, spam.numberOfWords, "outputSpam.txt");
 
-        BagOfWords ham = new BagOfWords();
-        numberOfHamMsgs = new File("all_data/ham/").listFiles().length;
-        for(int i = 1; i<300; i++){
-            a = String.format("%03d", i);
-            s = String.format("all_data/ham/" + a);
-            ham.loadFile(s);
-        }
-        ham.saveFile(ham.dictionarySize, ham.numberOfWords, "outputHam.txt");
+        // numberOfHamMsgs = new File("all_data/ham/").listFiles().length;
+        // for(int i = 1; i<300; i++){
+        //     a = String.format("%03d", i);
+        //     s = String.format("all_data/ham/" + a);
+        //     ham.loadFile(s);
+        // }
+        // ham.saveFile(ham.dictionarySize, ham.numberOfWords, "outputHam.txt");
 
-        numberOfClassifyMsgs = new File("all_data/classify/").listFiles().length;
-        for(int i = 1; i<=numberOfClassifyMsgs; i++){
-            a = String.format("%03d", i);
-            s = String.format("all_data/classify/" + a);
-            classifyLoadFile(a, classifyDictionary);
-        }
-        //loads all files in classify (atm 1 muna) and saves it in the dictionary
+        // numberOfClassifyMsgs = new File("all_data/classify/").listFiles().length;
+        // for(int i = 1; i<=numberOfClassifyMsgs; i++){
+        //     a = String.format("%03d", i);
+        //     s = String.format("all_data/classify/" + a);
+        //     classifyLoadFile(a, classifyDictionary);
+        // }
+        // //loads all files in classify (atm 1 muna) and saves it in the dictionary
+        this.initializeUI();
+    }
 
+    public void findSpam(BagOfWords ham, BagOfWords spam, HashMap dictionary){
         Probability p = new Probability();
         double pMessageSpam = 1;
         double pMessageHam = 1;
         double pSpam = p.pSpam(numberOfSpamMsgs, numberOfHamMsgs);
         double pHam = p.pHam(pSpam);
 
-        //gets pMessageSpam & pMessageHam by looping through the dictionary and saves each probability in a file
         for (Map.Entry<String, ArrayList> entry : classifyDictionary.entrySet()) {
           double sVal;
           double hVal;
@@ -91,10 +94,7 @@ public class UI {
             classifyFile(entry.getKey(), "Ham", pSpamMessage);
           }
         }
-
-        this.initializeUI();
     }
-
 
     public void classifyLoadFile(String filename, HashMap dictionary) {
         try{
