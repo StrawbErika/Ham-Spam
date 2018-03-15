@@ -46,10 +46,12 @@ public class UI {
         this.initializeUI();
     }
 
-    public void findSpam(BagOfWords ham, BagOfWords spam, HashMap dictionary){
+    public void findSpam(){
         Probability p = new Probability();
         double pMessageSpam = 1;
         double pMessageHam = 1;
+        numberOfHamMsgs = 1;
+        numberOfSpamMsgs = 1;
         double pSpam = p.pSpam(numberOfSpamMsgs, numberOfHamMsgs);
         double pHam = p.pHam(pSpam);
 
@@ -60,21 +62,21 @@ public class UI {
           double pWordHam = 0;
 
           for(int i = 0; i < entry.getValue().size(); i++){
-            if(spam.dictionary.containsKey(entry.getValue().get(i))){
-                sVal = spam.dictionary.get(entry.getValue().get(i));
+            if(this.spam.dictionary.containsKey(entry.getValue().get(i))){
+                sVal = this.spam.dictionary.get(entry.getValue().get(i));
             }else{
               sVal = 0;
             }
-            pWordSpam = p.pWordSpam(spam.numberOfWords, sVal);
+            pWordSpam = p.pWordSpam(this.spam.numberOfWords, sVal);
 
             pMessageSpam = pWordSpam * pMessageSpam;
 
-            if(ham.dictionary.containsKey(entry.getValue().get(i))){
-                hVal = ham.dictionary.get(entry.getValue().get(i));
+            if(this.ham.dictionary.containsKey(entry.getValue().get(i))){
+                hVal = this.ham.dictionary.get(entry.getValue().get(i));
             }else{
               hVal = 0;
             }
-            pWordHam = p.pWordHam(spam.numberOfWords, hVal);
+            pWordHam = p.pWordHam(this.spam.numberOfWords, hVal);
             pMessageHam = pWordHam * pMessageHam;
           }
 
@@ -174,7 +176,8 @@ public class UI {
       tabPanel.setPreferredSize(new Dimension(250,500));
       tabPanel.setBackground(Color.WHITE);
 
-
+      JTextArea wordsSpam = new JTextArea();
+      JTextArea frequenciesSpam = new JTextArea();
       JButton information= new JButton("Select Spam Folder here");
       information.addActionListener(new ActionListener(){
         public void actionPerformed(ActionEvent e){
@@ -183,6 +186,12 @@ public class UI {
           if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+            spam.loadFile(selectedFile.getAbsolutePath());
+            spam.saveFile(spam.dictionarySize, spam.numberOfWords, "outputHam.txt");
+            for (Map.Entry<String, Integer> entry : spam.dictionary.entrySet()) {
+              wordsSpam.append("                                  "+ entry.getKey()+ '\n');
+              frequenciesSpam.append("             "+ entry.getValue()+ '\n');
+            }
           }
           frame.requestFocus();
         }
@@ -202,15 +211,17 @@ public class UI {
       JLabel wordSpam = new JLabel("Word");
       textWSpamPanel.add(wordSpam);
       wordSpamPanel.add(textWSpamPanel);
+      wordSpamPanel.add(wordsSpam);
 
       JPanel frequencySpamPanel= new JPanel();
-      frequencySpamPanel.setBackground(Color.PINK);
+      frequencySpamPanel.setBackground(Color.WHITE);
       JPanel textFSpamPanel= new JPanel();
       textFSpamPanel.setPreferredSize(new Dimension(200,30));
       textFSpamPanel.setBackground(Color.LIGHT_GRAY);
       JLabel frequencySpam = new JLabel("Frequency");
       textFSpamPanel.add(frequencySpam);
       frequencySpamPanel.add(textFSpamPanel);
+      frequencySpamPanel.add(frequenciesSpam);
 
       wordFrequencySpamPanel.add(wordSpamPanel);
       wordFrequencySpamPanel.add(frequencySpamPanel);
@@ -230,7 +241,8 @@ public class UI {
       hamPanel.setBackground(Color.WHITE);
 
       JButton panel1= new JButton("Select Ham Folder here");
-
+      JTextArea words = new JTextArea();
+      JTextArea frequencies = new JTextArea();
       panel1.addActionListener(new ActionListener(){
         public void actionPerformed(ActionEvent e){
           JFileChooser fileChooser = new JFileChooser();
@@ -238,6 +250,12 @@ public class UI {
           if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+            ham.loadFile(selectedFile.getAbsolutePath());
+            ham.saveFile(ham.dictionarySize, ham.numberOfWords, "outputHam.txt");
+            for (Map.Entry<String, Integer> entry : ham.dictionary.entrySet()) {
+              words.append("                                  "+ entry.getKey()+ '\n');
+              frequencies.append("             "+ entry.getValue()+ '\n');
+            }
           }
           frame.requestFocus();
         }
@@ -257,15 +275,17 @@ public class UI {
       JLabel word = new JLabel("Word");
       textWPanel.add(word);
       wordPanel.add(textWPanel);
+      wordPanel.add(words);
 
       JPanel frequencyPanel= new JPanel();
-      frequencyPanel.setBackground(Color.PINK);
+      frequencyPanel.setBackground(Color.WHITE);
       JPanel textFPanel= new JPanel();
       textFPanel.setPreferredSize(new Dimension(200,30));
       textFPanel.setBackground(Color.LIGHT_GRAY);
       JLabel frequency = new JLabel("Frequency");
       textFPanel.add(frequency);
       frequencyPanel.add(textFPanel);
+      frequencyPanel.add(frequencies);
 
       wordFrequencyPanel.add(wordPanel);
       wordFrequencyPanel.add(frequencyPanel);
@@ -278,7 +298,7 @@ public class UI {
       JPanel panel02= new JPanel();
       JPanel dictionaryTotal = new JPanel();
       dictionaryTotal.setPreferredSize(new Dimension(350,60));
-      dictionaryTotal.setBackground(Color.PINK);
+      dictionaryTotal.setBackground(Color.WHITE);
       dictionaryTotal.setLayout(new GridLayout(1, 2));
       JLabel dictionarySize = new JLabel("   Dictionary Size:");
       JLabel totalWords = new JLabel("Total Words: ");
@@ -342,6 +362,7 @@ public class UI {
           if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+
           }
           frame.requestFocus();
         }
