@@ -1,3 +1,4 @@
+import java.util.Scanner;
 import java.io.*;
 import javax.swing.*;
 import java.awt.*;
@@ -9,7 +10,7 @@ import javax.imageio.*;
 public class UI {
     private JFrame frame;
     public HashMap<String, ArrayList> classifyDictionary;
-    public HashMap<String, ArrayList> outputDictionary;
+    public ArrayList<ArrayList<String>> outputDictionary;
     public int numberOfSpamMsgs;
     public int numberOfHamMsgs;
     public int numberOfClassifyMsgs;
@@ -17,7 +18,7 @@ public class UI {
     public BagOfWords ham;
     public UI() {
         this.classifyDictionary = new HashMap<String, ArrayList>();
-        this.outputDictionary = new HashMap<String, ArrayList>();
+        this.outputDictionary = new ArrayList<ArrayList<String>>();
         this.spam = new BagOfWords();
         this.ham = new BagOfWords();
         String s="";
@@ -48,64 +49,64 @@ public class UI {
         this.initializeUI();
     }
 
-    public void findSpam(){
+    public ArrayList<String> findSpam(String name, ArrayList<String> words, double k){
         Probability p = new Probability();
         double pMessageSpam = 1;
         double pMessageHam = 1;
         numberOfHamMsgs = 1;
         numberOfSpamMsgs = 1;
-        double pSpam = p.pSpam(numberOfSpamMsgs, numberOfHamMsgs);
+        double pSpam = p.pSpam(numberOfSpamMsgs, numberOfHamMsgs, k);
         double pHam = p.pHam(pSpam);
 
-        for (Map.Entry<String, ArrayList> entry : classifyDictionary.entrySet()) {
-          double sVal;
-          double hVal;
-          double pWordSpam = 0;
-          double pWordHam = 0;
+        double newSpam = p.findNewWords(this.spam, words);
+        double newHam = p.findNewWords(this.ham, words);
 
-          for(int i = 0; i < entry.getValue().size(); i++){
-            if(this.spam.dictionary.containsKey(entry.getValue().get(i))){
-                sVal = this.spam.dictionary.get(entry.getValue().get(i));
-            }else{
-              sVal = 0;
-            }
-            pWordSpam = p.pWordSpam(this.spam.numberOfWords, sVal);
+        double sVal;
+        double hVal;
+        double pWordSpam = 0;
+        double pWordHam = 0;
 
-            pMessageSpam = pWordSpam * pMessageSpam;
+        for(int i = 0; i < words.size(); i++){
+          if(this.spam.dictionary.containsKey(words.get(i))){
+              sVal = this.spam.dictionary.get(words.get(i));
+          }else{
+            sVal = 0;
+          }
+          pWordSpam = p.pWordSpam(this.spam.numberOfWords, sVal, k, this.spam.dictionarySize, newSpam);
 
-            if(this.ham.dictionary.containsKey(entry.getValue().get(i))){
-                hVal = this.ham.dictionary.get(entry.getValue().get(i));
-            }else{
-              hVal = 0;
-            }
-            pWordHam = p.pWordHam(this.spam.numberOfWords, hVal);
-            pMessageHam = pWordHam * pMessageHam;
-          }
+          pMessageSpam = pWordSpam * pMessageSpam;
 
-          double pSpamMessage;
-          double pMessage = p.pMessage(pMessageSpam, pSpam, pMessageHam, pHam);
-          if(pMessage > 0){
-            pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage, pSpam);
+          if(this.ham.dictionary.containsKey(words.get(i))){
+              hVal = this.ham.dictionary.get(words.get(i));
+          }else{
+            hVal = 0;
           }
-          else{
-            pSpamMessage = 0;
-          }
-
-          System.out.println(entry.getKey()+" : "+pSpamMessage);
-          String classify = " ";
-          if (pSpamMessage > 0.5){
-            classify = "Spam";
-            classifyFile(entry.getKey(), classify, pSpamMessage);
-          }
-          else{
-            classify = "Ham";
-            classifyFile(entry.getKey(), classify , pSpamMessage);
-          }
-          ArrayList<String> output = new ArrayList<String>();
-          output.add(classify);
-          output.add(Double.toString(pSpamMessage));
-          outputDictionary.put(entry.getKey(), output);
+          pWordHam = p.pWordHam(this.ham.numberOfWords, hVal, k, this.ham.dictionarySize, newHam);
+          pMessageHam = pWordHam * pMessageHam;
         }
+
+        double pSpamMessage;
+        double pMessage = p.pMessage(pMessageSpam, pSpam, pMessageHam, pHam);
+        if(pMessage > 0){
+          pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage, pSpam);
+        }
+        else{
+          pSpamMessage = 0;
+        }
+
+        String classify = " ";
+        if (pSpamMessage > 0.5){
+          classify = "Spam";
+        }
+        else{
+          classify = "Ham";
+        }
+        ArrayList<String> output = new ArrayList<String>();
+        output.add(name);
+        output.add(classify);
+        output.add(Double.toString(pSpamMessage));
+
+        return output;
     }
 
     public void classifyLoadFile(String filename, HashMap dictionary) {
@@ -432,12 +433,30 @@ public class UI {
 
       filter.addActionListener(new ActionListener(){
         public void actionPerformed(ActionEvent e){
-          findSpam();
-          for (Map.Entry<String, ArrayList> entry : outputDictionary.entrySet()) {
-            fileC.append(entry.getKey()+ '\n');
-            ArrayList<String> value = entry.getValue();
-            classC.append(value.get(0)+ '\n');
-            spamC.append("                            "+value.get(1)+ '\n');
+
+          Scanner reader = new Scanner(System.in);  // Reading from System.in
+          System.out.println("Enter k: ");
+          double k =reader.nextDouble();
+
+          System.out.println("Enter H0I: ");
+          for (Map.Entry<String, ArrayList> entry : classifyDictionary.entrySet()) {
+            System.out.println(entry.getKey());
+            outputDictionary = findSpam(entry.getKey(),entry.getValue(), k);
+          }
+          System.out.println("Enter H0III: ");
+          for(int i = 0; i < outputDictionary.size(); i+=2){
+            // ArrayList<String> list = outputDictionary.get(i);
+            System.out.println(outputDictionary);
+            // for(int j = 0; j < list.size(); j+=2){
+              // System.out.println("Enter H0III???????????/: ");
+              // System.out.println(list);
+              // String j0 = (list.get(j));
+              // String j1 = (list.get(j+1));
+              // String j2 = (list.get(j+2));
+              // fileC.append(j0+ '\n');
+              // classC.append(j1+ '\n');
+              // spamC.append("                            "+j2+ '\n');
+            // }
           }
         }
       });

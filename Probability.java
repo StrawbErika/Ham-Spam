@@ -7,8 +7,8 @@ public class Probability {
     }
 
 //MESSAGE IS FILE
-    public double pSpam(double numberOfSpamMsgs, double numberOfHamMsgs){
-        x = numberOfSpamMsgs / (numberOfHamMsgs + numberOfSpamMsgs);
+    public double pSpam(double numberOfSpamMsgs, double numberOfHamMsgs, double k){
+        x = numberOfSpamMsgs+k / (numberOfHamMsgs + numberOfSpamMsgs) + 2*k;
         return x;
     }
 
@@ -17,17 +17,29 @@ public class Probability {
         return x;
     }
 
+    public double findNewWords(BagOfWords hamSpam, ArrayList<String> words){
+      x = 0;
+      for(int i = 0; i < words.size(); i++){
+        for (Map.Entry<String, Integer> entry : hamSpam.dictionary.entrySet()) {
+          if(!(entry.getKey().equals(words.get(i)))){
+            x++;
+          }
+        }
+      }
+      return x;
+    }
+
     // public double pMessageSpam(){
         // multiply all pWordSpam
     // }
 
-    public double pWordSpam(double spamWords, double occurenceOfWord){
-        x =  occurenceOfWord / spamWords;
+    public double pWordSpam(double spamWords, double occurenceOfWord, double k, double size, double newWords){
+        x =  occurenceOfWord+k / spamWords + (k*(size+newWords));
         return x;
     }
 
-    public double pWordHam(double hamWords, double occurenceOfWord){
-        x =  occurenceOfWord / hamWords;
+    public double pWordHam(double hamWords, double occurenceOfWord, double k, double size, double newWords){
+        x =  occurenceOfWord+k / hamWords + (k*(size+newWords));
         return x;
     }
 
