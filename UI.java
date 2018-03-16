@@ -17,20 +17,30 @@ public class UI {
         classifyDictionary = new HashMap<String, ArrayList>();
         String s="";
         String a="";
+
+        Scanner reader = new Scanner(System.in);  // Reading from System.in
+        System.out.println("Enter spam folder directory: ");
+        String spamFolder =reader.nextLine();
+
+
         BagOfWords spam = new BagOfWords();
-        numberOfSpamMsgs = new File("all_data/spam/").listFiles().length;
+        numberOfSpamMsgs = new File(spamFolder).listFiles().length;
         for(int i = 1; i<numberOfSpamMsgs; i++){
             a = String.format("%03d", i);
-            s = String.format("all_data/spam/" + a);
+            s = String.format(spamFolder + a);
             spam.loadFile(s);
         }
         spam.saveFile(spam.dictionarySize, spam.numberOfWords, "outputSpam.txt");
 
+
+        System.out.println("Enter ham folder directory: ");
+        String hamFolder =reader.nextLine();
+
         BagOfWords ham = new BagOfWords();
-        numberOfHamMsgs = new File("all_data/ham/").listFiles().length;
-        for(int i = 1; i<300; i++){
+        numberOfHamMsgs = new File(hamFolder).listFiles().length;
+        for(int i = 1; i<numberOfHamMsgs; i++){
             a = String.format("%03d", i);
-            s = String.format("all_data/ham/" + a);
+            s = String.format(hamFolder + a);
             ham.loadFile(s);
         }
         ham.saveFile(ham.dictionarySize, ham.numberOfWords, "outputHam.txt");
@@ -41,20 +51,24 @@ public class UI {
             s = String.format("all_data/classify/" + a);
             classifyLoadFile(a, classifyDictionary);
         }
-        //loads all files in classify (atm 1 muna) and saves it in the dictionary
+
+        System.out.println("Enter k: ");
+        double k =reader.nextDouble();
 
         Probability p = new Probability();
         double pMessageSpam = 1;
         double pMessageHam = 1;
-        double pSpam = p.pSpam(numberOfSpamMsgs, numberOfHamMsgs);
+        double pSpam = p.pSpam(numberOfSpamMsgs, numberOfHamMsgs, k);
         double pHam = p.pHam(pSpam);
 
-        //gets pMessageSpam & pMessageHam by looping through the dictionary and saves each probability in a file
         for (Map.Entry<String, ArrayList> entry : classifyDictionary.entrySet()) {
           double sVal;
           double hVal;
           double pWordSpam = 0;
           double pWordHam = 0;
+
+          double newSpam = p.findNewWords(spam, entry.getValue());
+          double newHam = p.findNewWords(ham, entry.getValue());
 
           for(int i = 0; i < entry.getValue().size(); i++){
             if(spam.dictionary.containsKey(entry.getValue().get(i))){
@@ -62,8 +76,7 @@ public class UI {
             }else{
               sVal = 0;
             }
-            pWordSpam = p.pWordSpam(spam.numberOfWords, sVal);
-
+            pWordSpam = p.pWordSpam(spam.numberOfWords, sVal, k, spam.dictionarySize, newSpam);
             pMessageSpam = pWordSpam * pMessageSpam;
 
             if(ham.dictionary.containsKey(entry.getValue().get(i))){
@@ -71,18 +84,13 @@ public class UI {
             }else{
               hVal = 0;
             }
-            pWordHam = p.pWordHam(spam.numberOfWords, hVal);
+            pWordHam = p.pWordHam(ham.numberOfWords, hVal, k, ham.dictionarySize, newHam);
             pMessageHam = pWordHam * pMessageHam;
           }
 
           double pSpamMessage;
           double pMessage = p.pMessage(pMessageSpam, pSpam, pMessageHam, pHam);
-          if(pMessage > 0){
-            pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage, pSpam);
-          }
-          else{
-            pSpamMessage = 0;
-          }
+          pSpamMessage = p.pSpamMessage(pMessageSpam, pMessage, pSpam);
 
           if (pSpamMessage > 0.5){
             classifyFile(entry.getKey(), "Spam", pSpamMessage);
