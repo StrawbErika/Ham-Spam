@@ -22,29 +22,6 @@ public class UI {
         this.ham = new BagOfWords();
         String s="";
         String a="";
-        // numberOfSpamMsgs = new File("all_data/spam/").listFiles().length;
-        // for(int i = 1; i<numberOfSpamMsgs; i++){
-        //     a = String.format("%03d", i);
-        //     s = String.format("all_data/spam/" + a);
-        //     spam.loadFile(s);
-        // }
-        // spam.saveFile(spam.dictionarySize, spam.numberOfWords, "outputSpam.txt");
-
-        // numberOfHamMsgs = new File("all_data/ham/").listFiles().length;
-        // for(int i = 1; i<300; i++){
-        //     a = String.format("%03d", i);
-        //     s = String.format("all_data/ham/" + a);
-        //     ham.loadFile(s);
-        // }
-        // ham.saveFile(ham.dictionarySize, ham.numberOfWords, "outputHam.txt");
-
-        // numberOfClassifyMsgs = new File("all_data/classify/").listFiles().length;
-        // for(int i = 1; i<=numberOfClassifyMsgs; i++){
-        //     a = String.format("%03d", i);
-        //     s = String.format("all_data/classify/" + a);
-        //     classifyLoadFile(a, classifyDictionary);
-        // }
-        // //loads all files in classify (atm 1 muna) and saves it in the dictionary
         this.initializeUI();
     }
 
@@ -78,7 +55,7 @@ public class UI {
             }else{
               hVal = 0;
             }
-            pWordHam = p.pWordHam(this.spam.numberOfWords, hVal);
+            pWordHam = p.pWordHam(this.ham.numberOfWords, hVal);
             pMessageHam = pWordHam * pMessageHam;
           }
 
