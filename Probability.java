@@ -6,8 +6,9 @@ public class Probability {
     public Probability(){
     }
 
-    public double pSpam(double spamLines, double hamLines){
-        x = spamLines / (hamLines + spamLines);
+//MESSAGE IS FILE
+    public double pSpam(double numberOfSpamMsgs, double numberOfHamMsgs){
+        x = numberOfSpamMsgs / (numberOfHamMsgs + numberOfSpamMsgs);
         return x;
     }
 
@@ -31,8 +32,7 @@ public class Probability {
     }
 
 
-    public double pSpamMessage(double pProductOfWordSpam, double pMessage){
-        x = pProductOfWordSpam / pMessage;
+    public double pSpamMessage(double pProductOfWordSpam, double pMessage, double pSpam){
         return x;
     }
 
